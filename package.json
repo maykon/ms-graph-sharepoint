@@ -1,6 +1,6 @@
 {
   "name": "@maykoncapellari/msgraph-sharepoint",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Microsoft Graph module to helps upload files to sharepoint",
   "main": "src/index.js",
   "type": "module",
@@ -23,6 +23,6 @@
   },
   "homepage": "https://github.com/maykon/msgraph-sharepoint#readme",
   "dependencies": {
-    "@maykoncapellari/cli-builder": "^1.0.4"
+    "@maykoncapellari/cli-builder": "^1.0.8"
   }
 }
