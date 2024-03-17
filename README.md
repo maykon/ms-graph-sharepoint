@@ -11,7 +11,7 @@ Install globally:
 
 Import in NodeJS script:
 
-    import { prompt } from '@maykoncapellari/msgraph-sharepoint';
+    import { MsGraphService } from '@maykoncapellari/msgraph-sharepoint';
 
     const msService = new MsGraphService({ ...params });
     await msService.signIn();
