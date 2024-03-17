@@ -7,6 +7,16 @@
  * @class
  */
 export default class NormalizeUtils {
+
+  /**
+   * Remove links in text
+   * 
+   * @param {string} text 
+   * @returns {string}
+   */
+  static removeLinks(text) {
+    return text.replace(/https?:\/\/[^ ~]+/g, '');
+  }  
   
   /**
    * Normalize the text to put on sharepoint
@@ -16,7 +26,7 @@ export default class NormalizeUtils {
    * @returns 
    */
   static normalize(text) {
-    const normalizedTxt = text.replace(/\*/g, '')
+    const normalizedTxt = this.removeLinks(text).replace(/\*/g, '')
       .replace(/"|\{|\}|\*|:|<|>|\?|\/|\%|\+|\|/g, '')
       .replace(/\r|\t/g, '')
       .replace(/\n/g, ' - ')
@@ -26,7 +36,7 @@ export default class NormalizeUtils {
       .replace(/^\.|\.$/, '')
       .replace(/\s+/, ' ')
       .trim();
-    return replaceOutlookInvalidNames(normalizedTxt);
+    return this.replaceOutlookInvalidNames(normalizedTxt);
   }
 
   /**
@@ -59,7 +69,7 @@ export default class NormalizeUtils {
    * @returns {string}
    */
   static encode(text) {
-    return encodeRFC3986URIComponent(normalize(text));
+    return this.encodeRFC3986URIComponent(this.normalize(text));
   }
 
   /**
@@ -84,6 +94,6 @@ export default class NormalizeUtils {
    * @returns {string}
    */
   static decode(text) {
-    return decodeURIComponent(normalize(text));
+    return decodeURIComponent(this.normalize(text));
   }
 }
