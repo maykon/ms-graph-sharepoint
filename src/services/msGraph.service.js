@@ -22,13 +22,16 @@ export default class MsGraphService {
   static #msGraphUrl = 'https://graph.microsoft.com/v1.0/';
   static #msScopes = 'openid offline_access User.Read Files.ReadWrite.All';
   static #MAX_RETRIES = 3;
+  static #msDomainUrl = 'https://%s.sharepoint.com/';
 
+  #msDomain;
   #msClientId;
   #msClientSecret;
   #msCode;
   #msAccessToken;
   #msRefreshToken;
   #sharepointFolder;
+  #sharepointFolderUrl;
   #isDebug;
   #shouldLogToken;
 
@@ -36,10 +39,12 @@ export default class MsGraphService {
    * The Params MsGraphService.
    * 
    * @typedef {Object} MsGraphServiceParams
+   * @property {string} domain - The Microsoft Sharepoint domain.
    * @property {string} client - The Microsoft APP ClientID.
    * @property {string} secret - The Microsoft APP ClientSecret.
    * @property {string} [token] - The Microsoft Access Token (When defined the client and secret is ignored)
    * @property {string} [sharepointFolder] - The Microsoft Sharepoint folder used on upload files (Default: 'me/drive/root').
+   * @property {string} [sharepointFolderUrl] - The Microsoft Sharepoint folder URL used on upload files (Default: 'Shared Documents/').
    * @property {boolean} [debug] - Define debug mode (Default: false)
    * @property {boolean} [logToken] - Define if will log the access token after sigIn (Default: false)
    */
@@ -49,7 +54,7 @@ export default class MsGraphService {
    * @constructor
    * @param {MsGraphServiceParams} params
    */
-  constructor({ client, secret, token, sharepointFolder, debug, logToken }) {
+  constructor({ domain, client, secret, token, sharepointFolder, sharepointFolderUrl, debug, logToken }) {
     if (!client) {
       throw new BaseError('⚠️ The Microsoft APP ClientID is required!');
     }
@@ -57,6 +62,8 @@ export default class MsGraphService {
       throw new BaseError('⚠️ The Microsoft APP ClientSecret is required!');
     }
 
+    this.#msDomain = domain;
+    this.#sharepointFolderUrl = sharepointFolderUrl || 'Shared Documents/';
     this.#msClientId = client;
     this.#msClientSecret = secret;
     this.logout();
@@ -318,5 +325,15 @@ When ready, please enter the value of the code parameter (from the URL of the bl
     this.#msCode = null;
     this.#msAccessToken = null;
     this.#msRefreshToken = null;
+  }
+
+  /**
+   * Return the complete Sharepoint Url from some partial URL file
+   * 
+   * @param {*} - Partial url file 
+   * @returns Return the complete Sharepoint url
+   */
+  getSharepointUrl(url) {
+    return MsGraphService.#msDomainUrl.replace(/%s/, this.#msDomain).concat(this.#sharepointFolderUrl).concat(url);
   }
 }
