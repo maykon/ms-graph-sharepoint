@@ -1,6 +1,6 @@
 {
   "name": "@maykoncapellari/msgraph-sharepoint",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Microsoft Graph module to helps upload files to sharepoint",
   "main": "src/index.js",
   "type": "module",
