@@ -215,6 +215,11 @@ export default class MsGraphService {
         this.#debug('RequestGraphApi', response);
         if (response.error) {
           console.error('#requestGraphApi: ', url, response);
+          console.error('#requestGraphApi: ', response);
+          if (/eTag mismatch/.response.error.message){
+            const { eTag } = await this.requestGraphGet(url);
+            headers['If-Match'] = eTag;
+          }
           if (/IO error during request payload read/.test(response.error.message)) {
             return null;
           }
