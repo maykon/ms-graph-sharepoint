@@ -12,7 +12,7 @@ import NormalizeUtils from '../utils/normalize.js';
  * const msService = new MsGraphService({ ...params });
  * await msService.signIn();
  * // Will read '~/attachmentsDir/myfile.pdf' and put on 'me/drive/root/My Sharepoint Docs/myfile.pdf' on sharepoint
- * await msService.uploadFile('~/attachmentsDir', 'My Sharepoint Docs', 'myfile.pdf');
+ * await msService.uploadFile({ attachmentDir: '~/attachmentsDir', folderName: 'My Sharepoint Docs', file: 'myfile.pdf');
  * const profile = await msService.requestGraphGet('me'); // Get my profile data
  * await msService.logout();
  */
@@ -181,7 +181,32 @@ export default class MsGraphService {
     }
   }
 
-  async #requestGraphApi(url, method, body, headers = {}) {
+  /**
+   * The Params RequestConflictParams.
+   * 
+   * @typedef {Object} RequestConflictParams
+   * @property {error|etag} type - The type to resolve the conflict
+   * @property {string|random} itemNameResolver - The way will be resolve the item name - concat fixed text or random
+   */
+
+  /**
+   * The Params RequestApiParams.
+   * 
+   * @typedef {Object} RequestApiParams
+   * @property {string} url - The url that will be requested
+   * @property {GET|POST|PUT|DELETE} method - The HTTP method for request
+   * @property {*} [body] - The body used in the request
+   * @property {*} [headers] - The headers used in the request
+   * @property {RequestConflictParams} [conflict] - The conflict resolver config
+   */
+
+  /**
+   * Request a Graph endpoint
+   * 
+   * @param {RequestApiParams} param 
+   * @returns 
+   */
+  async #requestGraphApi({ url, method, body, headers = {}, conflict }) {
     let retry = 1;
     let response = null;
     while(retry <= MsGraphService.#MAX_RETRIES) {
@@ -193,7 +218,7 @@ export default class MsGraphService {
           if (/IO error during request payload read/.test(response.error.message)) {
             return null;
           }
-          throw new BaseError(`Error in request [${method}]: ${url}`);
+          throw new BaseError(`Error in request [${method}]: ${url}`, response.error);
         }
         break;
       } catch(error) {
@@ -210,48 +235,48 @@ export default class MsGraphService {
    * Make the GET request to a specific endpoint
    * 
    * @param {string} url 
-   * @param {*} headers 
+   * @param {*} [headers]
    * @returns 
    */
   async requestGraphGet(url, headers) {
-    return this.#requestGraphApi(url, 'GET', headers);
+    return this.#requestGraphApi({ url, method: 'GET', headers });
   }
 
   /**
    * Make the POST request to a specific endpoint
    * 
    * @param {string} url 
-   * @param {*} body 
-   * @param {*} headers 
+   * @param {*} [body]
+   * @param {*} [headers]
    * @returns 
    */
   async requestGraphPost(url, body, headers) {
-    return this.#requestGraphApi(url, 'POST', body, headers);
+    return this.#requestGraphApi({ url, method: 'POST', body, headers });
   }
 
   /**
    * Make the PUT request to a specific endpoint
    * 
-   * @param {*} url 
-   * @param {*} body 
-   * @param {*} headers 
-   * @param {*} debug 
+   * @param {string} url 
+   * @param {*} [body]
+   * @param {*} [headers]
+   * @param {RequestConflictParams} [conflict]
    * @returns 
    */
-  async requestGraphPut(url, body, headers, debug) {
-    return this.#requestGraphApi(url, 'PUT', body, headers, debug);
+  async requestGraphPut(url, body, headers, conflict) {
+    return this.#requestGraphApi({ url, method: 'PUT', body, headers, conflict });
   }
 
   /**
    * Make the DELETE request to a specific endpoint
    * 
-   * @param {*} url 
-   * @param {*} body 
-   * @param {*} headers 
+   * @param {string} url 
+   * @param {*} [body]
+   * @param {*} [headers]
    * @returns 
    */
   async requestGraphDelete(url, body, headers) {
-    return this.#requestGraphApi(url, 'DELETE', body, headers);
+    return this.#requestGraphApi({ url, method: 'DELETE', body, headers });
   }
 
   async #fileExists(filename) {
@@ -261,18 +286,26 @@ export default class MsGraphService {
   }
 
   /**
+   * The Params UploadFileParams.
+   * 
+   * @typedef {Object} UploadFileParams
+   * @property {string} attachmentDir - The path to a directory that contains the file to be uploaded
+   * @property {string} folderName - the URL Path that will be save the file on Sharepoint (If the folder/path not exists will be created)
+   * @property {string} file - The filename from the file that is inside of `attachmentDir` and will be saved on Sharepoint
+   * @property {RequestConflictParams} [conflict] - The conflict resolver config
+   */
+
+  /**
    * Upload some file to a specific folder on Sharepoint
    * 
-   * @param {string} attachmentDir - The path to a directory that contains the file to be uploaded
-   * @param {string} folderName - the URL Path that will be save the file on Sharepoint (If the folder/path not exists will be created)
-   * @param {string} file - The filename from the file that is inside of `attachmentDir` and will be saved on Sharepoint
+   * @param {UploadFileParams} params - The params for upload file
    * @returns 
    * 
    * @example
    * // Will read '~/attachmentsDir/myfile.pdf' and put on 'me/drive/root/My Sharepoint Docs/myfile.pdf' on sharepoint
-   * await msService.uploadFile('~/attachmentsDir', 'My Sharepoint Docs', 'myfile.pdf');
+   * await msService.uploadFile({ attachmentDir: '~/attachmentsDir', folderName: 'My Sharepoint Docs', file: 'myfile.pdf' });
    */
-  async uploadFile(attachmentDir, folderName, file) {
+  async uploadFile({ attachmentDir, folderName, file, conflict }) {
     const fileName = file.split('/').at(-1);
     const urlFile = this.#sharepointFolder.concat(`:/${folderName}/${NormalizeUtils.encode(fileName)}:/content`);
     try {
@@ -284,15 +317,15 @@ export default class MsGraphService {
         return null;
       }
       const fileContent = await fs.readFile(attachmentDir.concat(`/${file}`));
-      const response = await this.requestGraphPut(urlFile, fileContent);
+      const response = await this.requestGraphPut(urlFile, fileContent, null, conflict);
       if (response?.error) {
         this.#debug('UploadFile', response.error);
-        throw new BaseError(response.error?.message || 'Error in upload file');
+        throw new BaseError(response.error?.message || 'Error in upload file', response?.error);
       }
       return response;
     } catch (error) {
       this.#debug('UploadFile', { urlFile, error });
-      throw new BaseError(`Cannot upload a new file in ${urlFile}`);
+      throw new BaseError(`Cannot upload a new file in ${urlFile}`, error);
     }    
   }
 

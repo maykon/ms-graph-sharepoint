@@ -16,6 +16,6 @@ Import in NodeJS script:
     const msService = new MsGraphService({ ...params });
     await msService.signIn();
     // Will read '~/attachmentsDir/myfile.pdf' and put on 'me/drive/root/My Sharepoint Docs/myfile.pdf' on sharepoint
-    await msService.uploadFile('~/attachmentsDir', 'My Sharepoint Docs', 'myfile.pdf');
+    await msService.uploadFile({ attachmentsDir: '~/attachmentsDir', folderName: 'My Sharepoint Docs', file: 'myfile.pdf' });
     const profile = await msService.requestGraphGet('me'); // Get my profile data
     await msService.logout();
