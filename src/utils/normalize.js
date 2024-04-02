@@ -26,7 +26,7 @@ export default class NormalizeUtils {
    * @returns 
    */
   static normalize(text) {
-    const normalizedTxt = this.removeLinks(text).replace(/\*/g, '')
+    const normalizedTxt = NormalizeUtils.removeLinks(text).replace(/\*/g, '')
       .replace(/"|\{|\}|\*|:|<|>|\?|\/|\%|\+|\|/g, '')
       .replace(/\r|\t/g, '')
       .replace(/\n/g, ' - ')
@@ -36,7 +36,7 @@ export default class NormalizeUtils {
       .replace(/^\.|\.$/, '')
       .replace(/\s+/, ' ')
       .trim();
-    return this.replaceOutlookInvalidNames(normalizedTxt);
+    return NormalizeUtils.replaceOutlookInvalidNames(normalizedTxt);
   }
 
   /**
@@ -69,7 +69,7 @@ export default class NormalizeUtils {
    * @returns {string}
    */
   static encode(text) {
-    return this.encodeRFC3986URIComponent(this.normalize(text));
+    return NormalizeUtils.encodeRFC3986URIComponent(NormalizeUtils.normalize(text));
   }
 
   /**
@@ -94,6 +94,6 @@ export default class NormalizeUtils {
    * @returns {string}
    */
   static decode(text) {
-    return decodeURIComponent(this.normalize(text));
+    return decodeURIComponent(NormalizeUtils.normalize(text));
   }
 }
